@@ -1,0 +1,14 @@
+package:
+  name: axi_scmi_mailbox
+
+sources:
+
+  - include/typedef.svh
+  - include/assign.svh
+  - include/axi_typedef.svh
+  - include/axi_assign.svh
+  - include/prim_subreg.sv
+  - include/prim_subreg_arb.sv
+  - rtl/scmi_reg_pkg.sv
+  - rtl/scmi_reg_top.sv
+  - rtl/axi_scmi_mailbox.sv
