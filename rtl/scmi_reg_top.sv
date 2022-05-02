@@ -106,9 +106,9 @@ module scmi_reg_top #(
   logic [3:0] message_header_field1_qs;
   logic [3:0] message_header_field1_wd;
   logic message_header_field1_we;
-  logic [31:0] message_payload_qs;
-  logic [31:0] message_payload_wd;
-  logic message_payload_we;
+  logic [31:0] message_payload_1_qs;
+  logic [31:0] message_payload_1_wd;
+  logic message_payload_1_we;
   logic doorbell_intr_qs;
   logic doorbell_intr_wd;
   logic doorbell_intr_we;
@@ -257,13 +257,13 @@ module scmi_reg_top #(
   );
 
 
-  // R[dummy_register]: V(False)
+  // R[reserved_3]: V(False)
 
   prim_subreg #(
     .DW      (32),
     .SWACCESS("NONE"),
     .RESVAL  (32'h0)
-  ) u_dummy_register (
+  ) u_reserved_3 (
     .clk_i   (clk_i    ),
     .rst_ni  (rst_ni  ),
 
@@ -495,19 +495,19 @@ module scmi_reg_top #(
   );
 
 
-  // R[message_payload]: V(False)
+  // R[message_payload_1]: V(False)
 
   prim_subreg #(
     .DW      (32),
     .SWACCESS("RW"),
     .RESVAL  (32'h0)
-  ) u_message_payload (
+  ) u_message_payload_1 (
     .clk_i   (clk_i    ),
     .rst_ni  (rst_ni  ),
 
     // from register interface
-    .we     (message_payload_we),
-    .wd     (message_payload_wd),
+    .we     (message_payload_1_we),
+    .wd     (message_payload_1_wd),
 
     // from internal hardware
     .de     (1'b0),
@@ -518,7 +518,7 @@ module scmi_reg_top #(
     .q      (),
 
     // to register interface (read)
-    .qs     (message_payload_qs)
+    .qs     (message_payload_1_qs)
   );
 
 
@@ -638,11 +638,11 @@ module scmi_reg_top #(
     addr_hit[0] = (reg_addr == SCMI_RESERVED_1_OFFSET);
     addr_hit[1] = (reg_addr == SCMI_CHANNEL_STATUS_OFFSET);
     addr_hit[2] = (reg_addr == SCMI_RESERVED_2_OFFSET);
-    addr_hit[3] = (reg_addr == SCMI_DUMMY_REGISTER_OFFSET);
+    addr_hit[3] = (reg_addr == SCMI_RESERVED_3_OFFSET);
     addr_hit[4] = (reg_addr == SCMI_CHANNEL_FLAGS_OFFSET);
     addr_hit[5] = (reg_addr == SCMI_LENGTH_OFFSET);
     addr_hit[6] = (reg_addr == SCMI_MESSAGE_HEADER_OFFSET);
-    addr_hit[7] = (reg_addr == SCMI_MESSAGE_PAYLOAD_OFFSET);
+    addr_hit[7] = (reg_addr == SCMI_MESSAGE_PAYLOAD_1_OFFSET);
     addr_hit[8] = (reg_addr == SCMI_DOORBELL_OFFSET);
     addr_hit[9] = (reg_addr == SCMI_COMPLETION_INTERRUPT_OFFSET);
   end
@@ -703,8 +703,8 @@ module scmi_reg_top #(
   assign message_header_field1_we = addr_hit[6] & reg_we & !reg_error;
   assign message_header_field1_wd = reg_wdata[31:28];
 
-  assign message_payload_we = addr_hit[7] & reg_we & !reg_error;
-  assign message_payload_wd = reg_wdata[31:0];
+  assign message_payload_1_we = addr_hit[7] & reg_we & !reg_error;
+  assign message_payload_1_wd = reg_wdata[31:0];
 
   assign doorbell_intr_we = addr_hit[8] & reg_we & !reg_error;
   assign doorbell_intr_wd = reg_wdata[0];
@@ -758,7 +758,7 @@ module scmi_reg_top #(
       end
 
       addr_hit[7]: begin
-        reg_rdata_next[31:0] = message_payload_qs;
+        reg_rdata_next[31:0] = message_payload_1_qs;
       end
 
       addr_hit[8]: begin

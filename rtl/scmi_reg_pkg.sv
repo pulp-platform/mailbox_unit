@@ -41,11 +41,11 @@ package scmi_reg_pkg;
   parameter logic [BlockAw-1:0] SCMI_RESERVED_1_OFFSET = 6'h 0;
   parameter logic [BlockAw-1:0] SCMI_CHANNEL_STATUS_OFFSET = 6'h 4;
   parameter logic [BlockAw-1:0] SCMI_RESERVED_2_OFFSET = 6'h 8;
-  parameter logic [BlockAw-1:0] SCMI_DUMMY_REGISTER_OFFSET = 6'h c;
+  parameter logic [BlockAw-1:0] SCMI_RESERVED_3_OFFSET = 6'h c;
   parameter logic [BlockAw-1:0] SCMI_CHANNEL_FLAGS_OFFSET = 6'h 10;
   parameter logic [BlockAw-1:0] SCMI_LENGTH_OFFSET = 6'h 14;
   parameter logic [BlockAw-1:0] SCMI_MESSAGE_HEADER_OFFSET = 6'h 18;
-  parameter logic [BlockAw-1:0] SCMI_MESSAGE_PAYLOAD_OFFSET = 6'h 1c;
+  parameter logic [BlockAw-1:0] SCMI_MESSAGE_PAYLOAD_1_OFFSET = 6'h 1c;
   parameter logic [BlockAw-1:0] SCMI_DOORBELL_OFFSET = 6'h 20;
   parameter logic [BlockAw-1:0] SCMI_COMPLETION_INTERRUPT_OFFSET = 6'h 24;
 
@@ -54,11 +54,11 @@ package scmi_reg_pkg;
     SCMI_RESERVED_1,
     SCMI_CHANNEL_STATUS,
     SCMI_RESERVED_2,
-    SCMI_DUMMY_REGISTER,
+    SCMI_RESERVED_3,
     SCMI_CHANNEL_FLAGS,
     SCMI_LENGTH,
     SCMI_MESSAGE_HEADER,
-    SCMI_MESSAGE_PAYLOAD,
+    SCMI_MESSAGE_PAYLOAD_1,
     SCMI_DOORBELL,
     SCMI_COMPLETION_INTERRUPT
   } scmi_id_e;
@@ -68,11 +68,11 @@ package scmi_reg_pkg;
     4'b 1111, // index[0] SCMI_RESERVED_1
     4'b 1111, // index[1] SCMI_CHANNEL_STATUS
     4'b 1111, // index[2] SCMI_RESERVED_2
-    4'b 1111, // index[3] SCMI_DUMMY_REGISTER
+    4'b 1111, // index[3] SCMI_RESERVED_3
     4'b 1111, // index[4] SCMI_CHANNEL_FLAGS
     4'b 1111, // index[5] SCMI_LENGTH
     4'b 1111, // index[6] SCMI_MESSAGE_HEADER
-    4'b 1111, // index[7] SCMI_MESSAGE_PAYLOAD
+    4'b 1111, // index[7] SCMI_MESSAGE_PAYLOAD_1
     4'b 1111, // index[8] SCMI_DOORBELL
     4'b 1111  // index[9] SCMI_COMPLETION_INTERRUPT
   };

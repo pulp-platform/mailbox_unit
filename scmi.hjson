@@ -34,15 +34,15 @@
       ],
     },
     { name: "Reserved_2",
-      desc: "Reserved, implementation defined",
+      desc: "Reserved, implementation defined (32 bits over 64)",
       swaccess: "rw",
       hwaccess: "none",
       fields: [
         { bits: "31:0" }
       ],
     },
-    { name: "Dummy_Register",
-      desc: "Hello! I'm Dummy!",
+    { name: "Reserved_3",
+      desc: "Reserved, implementation defined (32 bits over 64)",
       swaccess: "none",
       hwaccess: "none",
       fields: [
@@ -93,7 +93,7 @@
         }
       ],
     },
-    { name: "Message_Payload",
+    { name: "Message_Payload_1",
       desc: "memory region dedicated to the parameters of the commands and their returns",
       swaccess: "rw",
       hwaccess: "none",
