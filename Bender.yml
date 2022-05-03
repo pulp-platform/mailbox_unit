@@ -1,6 +1,9 @@
 package:
   name: axi_scmi_mailbox
-
+  
+dependecies:
+  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
+  
 sources:
 
   - include/typedef.svh
