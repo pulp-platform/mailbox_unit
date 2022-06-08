@@ -104,7 +104,7 @@ module axi_scmi_mailbox
     .axi_mst_resp_t     ( mst_resp_t              ),
     .axi_slv_req_t      ( slv_req_t               ),
     .axi_slv_resp_t     ( slv_resp_t              )
-  ) i_axi_dw_converter (
+   ) i_axi_dw_converter_scmi (
     .clk_i      ( clk_i    ),
     .rst_ni     ( rst_ni   ),
     // slave port
