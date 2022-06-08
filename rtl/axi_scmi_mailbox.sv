@@ -10,10 +10,11 @@
 //
 //
 
-`include "../include/assign.svh"
-`include "../include/typedef.svh"
-`include "../include/axi_assign.svh"
-`include "../include/axi_typedef.svh"
+
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+`include "register_interface/typedef.svh"
+`include "register_interface/assign.svh"
 
 module axi_scmi_mailbox 
   import scmi_reg_pkg::*;
