@@ -30,7 +30,7 @@ module prim_subreg #(
   logic          wr_en;
   logic [DW-1:0] wr_data;
 
-  prim_subreg_arb_scmi #(
+  prim_subreg_arb #(
     .DW       ( DW       ),
     .SWACCESS ( SWACCESS )
   ) wr_en_data_arb (

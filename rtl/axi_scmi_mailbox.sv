@@ -38,6 +38,8 @@ module axi_scmi_mailbox
 );
 
   typedef logic [AXI_ADDR_WIDTH-1:0]            addr_t;
+  typedef logic [31:0]                          mst_addr_t;
+   
   typedef logic [AXI_MST_PORT_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_MST_PORT_DATA_WIDTH/8-1:0] strb_t;
 
@@ -49,7 +51,7 @@ module axi_scmi_mailbox
   typedef logic [AXI_USER_WIDTH-1:0] user_t               ;
 
   
-  `REG_BUS_TYPEDEF_REQ(reg_req_t, addr_t, data_t, strb_t)
+  `REG_BUS_TYPEDEF_REQ(reg_req_t, mst_addr_t, mst_data_t, strb_t)
   `REG_BUS_TYPEDEF_RSP(reg_rsp_t, data_t)
    
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
@@ -84,7 +86,7 @@ module axi_scmi_mailbox
      .reg2hw,
      .reg_req_i(reg_req),
      .reg_rsp_o(reg_rsp),
-     .devmode_i(1'b1)
+     .devmode_i(1'b0)
    );
 
    axi_dw_converter #(

@@ -65,16 +65,16 @@ package scmi_reg_pkg;
 
   // Register width information to check illegal writes
   parameter logic [3:0] SCMI_PERMIT [10] = '{
-    4'b 1111, // index[0] SCMI_RESERVED_1
-    4'b 1111, // index[1] SCMI_CHANNEL_STATUS
-    4'b 1111, // index[2] SCMI_RESERVED_2
-    4'b 1111, // index[3] SCMI_RESERVED_3
-    4'b 1111, // index[4] SCMI_CHANNEL_FLAGS
-    4'b 1111, // index[5] SCMI_LENGTH
-    4'b 1111, // index[6] SCMI_MESSAGE_HEADER
-    4'b 1111, // index[7] SCMI_MESSAGE_PAYLOAD_1
-    4'b 1111, // index[8] SCMI_DOORBELL
-    4'b 1111  // index[9] SCMI_COMPLETION_INTERRUPT
+    4'b 0000, // index[0] SCMI_RESERVED_1
+    4'b 0000, // index[1] SCMI_CHANNEL_STATUS
+    4'b 0000, // index[2] SCMI_RESERVED_2
+    4'b 0000, // index[3] SCMI_RESERVED_3
+    4'b 0000, // index[4] SCMI_CHANNEL_FLAGS
+    4'b 0000, // index[5] SCMI_LENGTH
+    4'b 0000, // index[6] SCMI_MESSAGE_HEADER
+    4'b 0000, // index[7] SCMI_MESSAGE_PAYLOAD_1
+    4'b 0000, // index[8] SCMI_DOORBELL
+    4'b 0000  // index[9] SCMI_COMPLETION_INTERRUPT
   };
 
 endpackage
