@@ -96,7 +96,7 @@ module axi_scmi_mailbox
      end else if(AXI_SLV_PORT_DATA_WIDTH  < AXI_MST_PORT_DATA_WIDTH) begin
         axi_mbox_rsp.r.data = axi32_mbox_rsp.r.data[AXI_SLV_PORT_DATA_WIDTH-1:0];
         axi32_mbox_req.w.data[AXI_SLV_PORT_DATA_WIDTH-1:0] = axi_mbox_req.w.data;
-        axi32_mbox_req.w.strb[AXI_SLV_PORT_DATA_WIDTH-1:0] = axi_mbox_req.w.strb;
+        axi32_mbox_req.w.strb[AXI_SLV_PORT_DATA_WIDTH/8-1:0] = axi_mbox_req.w.strb;
         
      end else if(AXI_SLV_PORT_DATA_WIDTH == AXI_MST_PORT_DATA_WIDTH) begin
         axi_mbox_rsp.r.data = axi32_mbox_rsp.r.data;
