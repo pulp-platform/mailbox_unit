@@ -27,8 +27,8 @@ module mbox_tb #();
 
    semaphore lock;
 
-   parameter int   AW = 64;   
-   parameter int   DW = 64;  
+   parameter int   AW = 32;   
+   parameter int   DW = 32;  
    parameter int   AX_MIN_WAIT_CYCLES = 0;   
    parameter int   AX_MAX_WAIT_CYCLES = 1;   
    parameter int   W_MIN_WAIT_CYCLES = 0;   
@@ -111,8 +111,7 @@ module mbox_tb #();
  /////////////////////dut/////////////////////
 
    axi_scmi_mailbox #(
-      .AXI_ADDR_WIDTH(64),
-      .AXI_SLV_PORT_DATA_WIDTH(64),
+      .AXI_ADDR_WIDTH(32),
       .axi_lite_req_t(axi_lite_req_t),
       .axi_lite_resp_t(axi_lite_resp_t)
    ) u_dut (
