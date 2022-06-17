@@ -1,7 +1,7 @@
 package:
   name: axi_scmi_mailbox
   
-dependecies:
+dependencies:
 
   axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
   register_interface:     { git: "git@github.com:AlSaqr-platform/register_interface.git",   version:  0.3.2 }

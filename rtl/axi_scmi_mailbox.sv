@@ -48,28 +48,28 @@ module axi_scmi_mailbox
 
    scmi_reg_pkg::scmi_reg2hw_t reg2hw;
 
-   synch_wedge #(
+   sync_wedge #(
      .STAGES(1)
    ) doorbell_synch (
-     clk_i,
-     rst_ni,  
-     en_i(1'b1)  
-     serial_i(reg2hw.doorbell.intr.q && reg2hw.channel_flags.intr_enable.q),
-     r_edge_o(doorbell_irq_o),
-     f_edge_o(unused[0]),
-     serial_o(unsued[1])
+     .clk_i,
+     .rst_ni,  
+     .en_i(1'b1),  
+     .serial_i(reg2hw.doorbell.intr.q && reg2hw.channel_flags.intr_enable.q),
+     .r_edge_o(doorbell_irq_o),
+     .f_edge_o(unused[0]),
+     .serial_o(unused[1])
    );
 
-   synch_wedge #(
+   sync_wedge #(
      .STAGES(1)
    ) completion_synch (
-     clk_i,
-     rst_ni,  
-     en_i(1'b1)  
-     serial_i(reg2hw.completion_interrupt.intr.q && reg2hw.channel_flags.intr_enable.q),
-     r_edge_o(completion_irq_o),
-     f_edge_o(unused[2]),
-     serial_o(unsued[3])
+     .clk_i,
+     .rst_ni,  
+     .en_i(1'b1),  
+     .serial_i(reg2hw.completion_interrupt.intr.q && reg2hw.channel_flags.intr_enable.q),
+     .r_edge_o(completion_irq_o),
+     .f_edge_o(unused[2]),
+     .serial_o(unused[3])
    );
    
    axi_lite_to_reg #(

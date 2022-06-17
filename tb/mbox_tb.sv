@@ -9,8 +9,8 @@
 // specific language governing permissions and limitations under the License.
 //
 
-`include "../include/axi_assign.svh"
-`include "../include/axi_typedef.svh"
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 module mbox_tb #();
 
@@ -119,8 +119,8 @@ module mbox_tb #();
       .rst_ni(rst_ni),
       .axi_mbox_req(axi_lite_req_dec),
       .axi_mbox_rsp(axi_lite_rsp),
-      .irq_ibex_o(irq_ibex),
-      .irq_ariane_o(irq_ariane)
+      .doorbell_irq_o(irq_ibex),
+      .completion_irq_o(irq_ariane)
    );
 
  /////////////////////////////////////////////
