@@ -303,7 +303,7 @@ module scmi_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.channel_flags.intr_enable.q ),
 
     // to register interface (read)
     .qs     (channel_flags_intr_enable_qs)
@@ -329,7 +329,7 @@ module scmi_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (),
+    .q      (reg2hw.channel_flags.field1.q ),
 
     // to register interface (read)
     .qs     (channel_flags_field1_qs)

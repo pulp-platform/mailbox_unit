@@ -2,16 +2,18 @@ package:
   name: axi_scmi_mailbox
   
 dependecies:
-  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
-  
+
+  axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
+  register_interface:     { git: "git@github.com:AlSaqr-platform/register_interface.git",   version:  0.3.2 }
+  common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
+
 sources:
 
-  - include/typedef.svh
-  - include/assign.svh
-  - include/axi_typedef.svh
-  - include/axi_assign.svh
-  - include/prim_subreg.sv
-  - include/prim_subreg_arb.sv
+  - vendor/lowrisc_opentitan/src/prim_subreg.sv
+  - vendor/lowrisc_opentitan/src/prim_subreg_arb.sv
+  - vendor/lowrisc_opentitan/src/prim_subreg_shadow.sv
+  - vendor/lowrisc_opentitan/src/prim_subreg_ext.sv
   - rtl/scmi_reg_pkg.sv
   - rtl/scmi_reg_top.sv
   - rtl/axi_scmi_mailbox.sv
+  - tb/mbox_tb.sv

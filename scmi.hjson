@@ -52,7 +52,7 @@
     { name: "Channel_Flags",
       desc: "Defines wheter interrupts or polling is used for communication",
       swaccess: "rw",
-      hwaccess: "none",
+      hwaccess: "hro",
       fields: [
         { bits: "31:1" },
         { bits: "0",

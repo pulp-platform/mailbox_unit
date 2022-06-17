@@ -16,6 +16,15 @@ package scmi_reg_pkg;
   typedef struct packed {
     struct packed {
       logic        q;
+    } intr_enable;
+    struct packed {
+      logic [30:0] q;
+    } field1;
+  } scmi_reg2hw_channel_flags_reg_t;
+
+  typedef struct packed {
+    struct packed {
+      logic        q;
     } intr;
     struct packed {
       logic [30:0] q;
@@ -33,6 +42,7 @@ package scmi_reg_pkg;
 
   // Register -> HW type
   typedef struct packed {
+    scmi_reg2hw_channel_flags_reg_t channel_flags; // [95:64]
     scmi_reg2hw_doorbell_reg_t doorbell; // [63:32]
     scmi_reg2hw_completion_interrupt_reg_t completion_interrupt; // [31:0]
   } scmi_reg2hw_t;

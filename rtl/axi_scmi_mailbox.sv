@@ -10,10 +10,10 @@
 //
 //
 
-`include "../include/assign.svh"
-`include "../include/typedef.svh"
-`include "../include/axi_assign.svh"
-`include "../include/axi_typedef.svh"
+`include "register_interface/assign.svh"
+`include "register_interface/typedef.svh"
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 module axi_scmi_mailbox 
    import scmi_reg_pkg::*;
@@ -28,14 +28,17 @@ module axi_scmi_mailbox
    input  axi_lite_req_t   axi_mbox_req, 
    output axi_lite_resp_t  axi_mbox_rsp,
    
-   output logic            irq_ariane_o, 
-   output logic            irq_ibex_o
+   output logic            doorbell_irq_o, 
+   output logic            completion_irq_o
 );
    parameter int unsigned  AXI_DATA_WIDTH = 32;
     
    typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
    typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
    typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+
+   logic [3:0]                          unused;
+   
   
   `REG_BUS_TYPEDEF_REQ(reg_req_t, addr_t, data_t, strb_t)
   `REG_BUS_TYPEDEF_RSP(reg_rsp_t, data_t)
@@ -45,8 +48,29 @@ module axi_scmi_mailbox
 
    scmi_reg_pkg::scmi_reg2hw_t reg2hw;
 
-   assign irq_ibex_o   = reg2hw.doorbell.intr.q;
-   assign irq_ariane_o = reg2hw.completion_interrupt.intr.q;
+   synch_wedge #(
+     .STAGES(1)
+   ) doorbell_synch (
+     clk_i,
+     rst_ni,  
+     en_i(1'b1)  
+     serial_i(reg2hw.doorbell.intr.q && reg2hw.channel_flags.intr_enable.q),
+     r_edge_o(doorbell_irq_o),
+     f_edge_o(unused[0]),
+     serial_o(unsued[1])
+   );
+
+   synch_wedge #(
+     .STAGES(1)
+   ) completion_synch (
+     clk_i,
+     rst_ni,  
+     en_i(1'b1)  
+     serial_i(reg2hw.completion_interrupt.intr.q && reg2hw.channel_flags.intr_enable.q),
+     r_edge_o(completion_irq_o),
+     f_edge_o(unused[2]),
+     serial_o(unsued[3])
+   );
    
    axi_lite_to_reg #(
      .ADDR_WIDTH(AXI_ADDR_WIDTH),
