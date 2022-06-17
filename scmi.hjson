@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 {
   name: "scmi",
-  clock_primary: "clk_i",
+   clocking: [{clock: "clk_i", reset: "rst_ni"}],
   bus_interfaces: [
         { protocol: "reg_iface", direction: "device"}
     ],
@@ -43,7 +43,7 @@
     },
     { name: "Reserved_3",
       desc: "Reserved, implementation defined (32 bits over 64)",
-      swaccess: "none",
+      swaccess: "rw",
       hwaccess: "none",
       fields: [
         { bits: "31:0" }
