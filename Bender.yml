@@ -4,7 +4,7 @@ package:
 dependencies:
 
   axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
-  register_interface:     { git: "git@github.com:AlSaqr-platform/register_interface.git",  rev: "10c804b290a1b3ef625a02fd60ed915ff88ee9de" }
+  register_interface:     { git: "git@github.com:AlSaqr-platform/register_interface.git",  rev: "vendor_rebase" }
   common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
 
 sources:
