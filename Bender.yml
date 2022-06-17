@@ -9,10 +9,6 @@ dependencies:
 
 sources:
 
-  - vendor/lowrisc_opentitan/src/prim_subreg.sv
-  - vendor/lowrisc_opentitan/src/prim_subreg_arb.sv
-  - vendor/lowrisc_opentitan/src/prim_subreg_shadow.sv
-  - vendor/lowrisc_opentitan/src/prim_subreg_ext.sv
   - rtl/scmi_reg_pkg.sv
   - rtl/scmi_reg_top.sv
   - rtl/axi_scmi_mailbox.sv
