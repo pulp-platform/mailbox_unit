@@ -49,24 +49,24 @@ module axi_scmi_mailbox
    scmi_reg_pkg::scmi_reg2hw_t reg2hw;
 
    sync_wedge #(
-     .STAGES(1)
+     .STAGES(2)
    ) doorbell_synch (
      .clk_i,
      .rst_ni,  
      .en_i(1'b1),  
-     .serial_i(reg2hw.doorbell.intr.q && reg2hw.channel_flags.intr_enable.q),
+     .serial_i(reg2hw.doorbell.intr.q),// && reg2hw.channel_flags.intr_enable.q),
      .r_edge_o(doorbell_irq_o),
      .f_edge_o(unused[0]),
      .serial_o(unused[1])
    );
 
    sync_wedge #(
-     .STAGES(1)
+     .STAGES(2)
    ) completion_synch (
      .clk_i,
      .rst_ni,  
      .en_i(1'b1),  
-     .serial_i(reg2hw.completion_interrupt.intr.q && reg2hw.channel_flags.intr_enable.q),
+     .serial_i(reg2hw.completion_interrupt.intr.q),// && reg2hw.channel_flags.intr_enable.q),
      .r_edge_o(completion_irq_o),
      .f_edge_o(unused[2]),
      .serial_o(unused[3])
