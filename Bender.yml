@@ -14,5 +14,6 @@ sources:
   - rtl/axi_scmi_mailbox.sv
   #- tb/mbox_tb.sv
 
-  target: test
-     - tb/mbox_tb.sv
+  - target: test
+    files:
+      - tb/mbox_tb.sv
