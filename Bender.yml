@@ -12,4 +12,7 @@ sources:
   - rtl/scmi_reg_pkg.sv
   - rtl/scmi_reg_top.sv
   - rtl/axi_scmi_mailbox.sv
-  - tb/mbox_tb.sv
+  #- tb/mbox_tb.sv
+
+  target: test
+     - tb/mbox_tb.sv
