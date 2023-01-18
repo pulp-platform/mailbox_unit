@@ -101,11 +101,11 @@ module mbox_tb #();
   
    assign axi_lite_req_dec.ar.prot  = axi_lite_req.ar.prot;
    assign axi_lite_req_dec.ar_valid = axi_lite_req.ar_valid;
-   assign axi_lite_req.ar_ready     = axi_lite_req_dec.ar_ready;
+   //assign axi_lite_req.ar_ready     = axi_lite_req_dec.ar_ready;
 
    assign axi_lite_req_dec.aw.prot  = axi_lite_req.aw.prot;
    assign axi_lite_req_dec.aw_valid = axi_lite_req.aw_valid;
-   assign axi_lite_req.aw_ready     = axi_lite_req_dec.aw_ready;
+   //assign axi_lite_req.aw_ready     = axi_lite_req_dec.aw_ready;
    
      
  /////////////////////dut/////////////////////
@@ -188,7 +188,7 @@ module mbox_tb #();
       else if(axi_lite_req.aw.addr[3:0] <= 4'h 9)
         axi_lite_req_dec.aw.addr = 64'h 0000000000000020;
       else
-        axi_lite_req_dec.aw_addr = 64'h 0000000000000024;
+        axi_lite_req_dec.aw.addr = 64'h 0000000000000024;
      end
    end
    
