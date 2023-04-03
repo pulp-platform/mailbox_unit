@@ -18,33 +18,65 @@
 module axi_scmi_mailbox 
    import scmi_reg_pkg::*;
 #(
-   parameter int unsigned AXI_ADDR_WIDTH = 64,
-   parameter type axi_lite_req_t         = logic,
-   parameter type axi_lite_resp_t        = logic
+   parameter int unsigned AXI_ADDR_WIDTH     = 64,
+   parameter int unsigned AXI_MST_DATA_WIDTH = 64,
+   parameter int unsigned AXI_ID__WIDTH      = 8,
+   parameter int unsigned AXI_USER_WIDTH     = 1,
+   parameter type axi_req_t                  = logic,
+   parameter type axi_resp_t                 = logic
 )  (
    input  logic            clk_i, 
    input  logic            rst_ni, 
 
-   input  axi_lite_req_t   axi_mbox_req, 
-   output axi_lite_resp_t  axi_mbox_rsp,
+   input  axi_req_t        axi_mbox_req, 
+   output axi_resp_t       axi_mbox_rsp,
    
    output logic            doorbell_irq_o, 
    output logic            completion_irq_o
 );
-   parameter int unsigned  AXI_DATA_WIDTH = 32;
-    
-   typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-
-   logic [3:0]                          unused;
    
+   local parameter int unsigned  AXI_SLV_DATA_WIDTH = 32;
+   
+   typedef logic [AXI_ADDR_WIDTH-1:0]       addr_t;
+
+   typedef logic [AXI_SLV_DATA_WIDTH-1:0]   slv_data_t;
+   typedef logic [AXI_SLV_DATA_WIDTH/8-1:0] slv_strb_t;
   
-  `REG_BUS_TYPEDEF_REQ(reg_req_t, addr_t, data_t, strb_t)
-  `REG_BUS_TYPEDEF_RSP(reg_rsp_t, data_t)
+   typedef logic [AXI_MST_DATA_WIDTH-1:0]   mst_data_t;
+   typedef logic [AXI_MST_DATA_WIDTH/8-1:0] mst_strb_t;
+
+   typedef logic [AXI_USER_WIDTH-1:0]       user_t;
+   typedef logic [AXI_ID_WIDTH-1:0]         id_t;
+ 
+
+   `AXI_TYPEDEF_AW_CHAN_T (aw_chan_t, addr_t, id_t, user_t)
+   
+   `AXI_TYPEDEF_W_CHAN_T  (mst_w_chan_t, mst_data_t, mst_strb_t, user_t)
+   `AXI_TYPEDEF_W_CHAN_T  (slv_w_chan_t, slv_data_t, slv_strb_t, user_t)
+   
+   `AXI_TYPEDEF_B_CHAN_T  (b_chan_t, id_t, user_t)
+   
+   `AXI_TYPEDEF_AR_CHAN_T (slv_ar_chan_t, addr_t, id_t, user_t)
+   
+   `AXI_TYPEDEF_R_CHAN_T  (mst_r_chan_t, mst_data_t, id_t, user_t)
+   `AXI_TYPEDEF_R_CHAN_T  (slv_r_chan_t, slv_data_t, id_t, user_t)
+   
+   `AXI_TYPEDEF_REQ_T     (mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+   `AXI_TYPEDEF_RESP_T    (mst_rsp_t, b_chan_t, mst_r_chan_t)
+   
+   `AXI_TYPEDEF_REQ_T     (slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+   `AXI_TYPEDEF_RESP_T    (slv_rsp_t, b_chan_t, slv_r_chan_t)
+  
+   `REG_BUS_TYPEDEF_REQ   (reg_req_t, addr_t, slv_data_t, slv_strb_t)
+   `REG_BUS_TYPEDEF_RSP   (reg_rsp_t, slv_data_t)
+      
+   logic [3:0]  unused;
    
    reg_req_t reg_req;
    reg_rsp_t reg_rsp;
+
+   slv_req_t axi32_mbox_req;
+   slv_rsp_t axi32_mbox_rsp;
 
    scmi_reg_pkg::scmi_reg2hw_t reg2hw;
 
@@ -53,7 +85,7 @@ module axi_scmi_mailbox
    ) doorbell_synch (
      .clk_i,
      .rst_ni,  
-     .en_i(1'b1),  
+     .en_i    (1'b1),  
      .serial_i(reg2hw.doorbell.intr.q),// && reg2hw.channel_flags.intr_enable.q),
      .r_edge_o(doorbell_irq_o),
      .f_edge_o(unused[0]),
@@ -65,29 +97,57 @@ module axi_scmi_mailbox
    ) completion_synch (
      .clk_i,
      .rst_ni,  
-     .en_i(1'b1),  
+     .en_i    (1'b1),  
      .serial_i(reg2hw.completion_interrupt.intr.q),// && reg2hw.channel_flags.intr_enable.q),
      .r_edge_o(completion_irq_o),
      .f_edge_o(unused[2]),
      .serial_o(unused[3])
    );
+
+   axi_dw_converter #(
+     .AxiMaxReads        ( 8                  ),
+     .AxiSlvPortDataWidth( AXI_MST_DATA_WIDTH ),
+     .AxiMstPortDataWidth( AXI_SLV_DATA_WIDTH ),
+     .AxiAddrWidth       ( AXI_ADDR_WIDTH     ),
+     .AxiIdWidth         ( AXI_ID_WIDTH       ),
+     .aw_chan_t          ( aw_chan_t          ),
+     .mst_w_chan_t       ( slv_w_chan_t       ),
+     .slv_w_chan_t       ( mst_w_chan_t       ),
+     .b_chan_t           ( b_chan_ t          ),
+     .ar_chan_t          ( ar_chan_t          ),
+     .mst_r_chan_t       ( slv_r_chan_t       ),
+     .slv_r_chan_t       ( mst_r_chan_t       ),
+     .axi_mst_req_t      ( slv_req_t          ),
+     .axi_mst_resp_t     ( slv_rsp_t          ),
+     .axi_slv_req_t      ( mst_req_t          ),
+     .axi_slv_resp_t     ( mst_rsp_t          )
+   )  i_axi_dw_converter (
+     .clk_i      ( clk_i          ),
+     .rst_ni     ( rst_ni         ),
+     // slave port
+     .slv_req_i  ( axi_mbox_req   ),
+     .slv_resp_o ( axi_mbox_rsp   ),
+     // master port
+     .mst_req_o  ( axi32_mbox_req ),
+     .mst_resp_i ( axi32_mbox_rsp ) 
+   );
    
-   axi_lite_to_reg #(
-     .ADDR_WIDTH(AXI_ADDR_WIDTH),
-     .DATA_WIDTH(AXI_DATA_WIDTH),
-     .BUFFER_DEPTH(1),
-     .DECOUPLE_W(0),
-     .axi_lite_req_t(axi_lite_req_t),
-     .axi_lite_rsp_t(axi_lite_resp_t),
-     .reg_req_t(reg_req_t),
-     .reg_rsp_t(reg_rsp_t)
+   axi_to_reg #(
+     .ADDR_WIDTH    ( AXI_ADDR_WIDTH     ),
+     .DATA_WIDTH    ( AXI_SLV_DATA_WIDTH ),
+     .BUFFER_DEPTH  ( 1                  ),
+     .DECOUPLE_W    ( 0                  ),
+     .axi_req_t     ( slv_req_t          ),
+     .axi_rsp_t     ( slv_resp_t         ),
+     .reg_req_t     ( reg_req_t          ),
+     .reg_rsp_t     ( reg_rsp_t          )
    ) u_axi2reg_intf (
      .clk_i,
      .rst_ni,
-     .axi_lite_req_i(axi_mbox_req),
-     .axi_lite_rsp_o(axi_mbox_rsp),
-     .reg_req_o(reg_req),
-     .reg_rsp_i(reg_rsp)
+     .axi_lite_req_i( axi32_mbox_req ),
+     .axi_lite_rsp_o( axi32_mbox_rsp ),
+     .reg_req_o     ( reg_req        ),
+     .reg_rsp_i     ( reg_rsp        )
    );
 
    scmi_reg_top #(
