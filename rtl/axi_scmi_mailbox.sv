@@ -20,7 +20,7 @@ module axi_scmi_mailbox
 #(
    parameter int unsigned AXI_ADDR_WIDTH     = 64,
    parameter int unsigned AXI_MST_DATA_WIDTH = 64,
-   parameter int unsigned AXI_ID__WIDTH      = 8,
+   parameter int unsigned AXI_ID_WIDTH       = 8,
    parameter int unsigned AXI_USER_WIDTH     = 1,
    parameter type axi_req_t                  = logic,
    parameter type axi_resp_t                 = logic
@@ -35,7 +35,7 @@ module axi_scmi_mailbox
    output logic            completion_irq_o
 );
    
-   local parameter int unsigned  AXI_SLV_DATA_WIDTH = 32;
+   localparam int unsigned  AXI_SLV_DATA_WIDTH = 32;
    
    typedef logic [AXI_ADDR_WIDTH-1:0]       addr_t;
 
@@ -51,20 +51,20 @@ module axi_scmi_mailbox
 
    `AXI_TYPEDEF_AW_CHAN_T (aw_chan_t, addr_t, id_t, user_t)
    
-   `AXI_TYPEDEF_W_CHAN_T  (mst_w_chan_t, mst_data_t, mst_strb_t, user_t)
-   `AXI_TYPEDEF_W_CHAN_T  (slv_w_chan_t, slv_data_t, slv_strb_t, user_t)
-   
    `AXI_TYPEDEF_B_CHAN_T  (b_chan_t, id_t, user_t)
    
-   `AXI_TYPEDEF_AR_CHAN_T (slv_ar_chan_t, addr_t, id_t, user_t)
+   `AXI_TYPEDEF_AR_CHAN_T (ar_chan_t, addr_t, id_t, user_t)
    
+   `AXI_TYPEDEF_W_CHAN_T  (mst_w_chan_t, mst_data_t, mst_strb_t, user_t)
+   `AXI_TYPEDEF_W_CHAN_T  (slv_w_chan_t, slv_data_t, slv_strb_t, user_t)
+  
    `AXI_TYPEDEF_R_CHAN_T  (mst_r_chan_t, mst_data_t, id_t, user_t)
    `AXI_TYPEDEF_R_CHAN_T  (slv_r_chan_t, slv_data_t, id_t, user_t)
    
-   `AXI_TYPEDEF_REQ_T     (mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+   `AXI_TYPEDEF_REQ_T     (mst_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t)
    `AXI_TYPEDEF_RESP_T    (mst_rsp_t, b_chan_t, mst_r_chan_t)
    
-   `AXI_TYPEDEF_REQ_T     (slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+   `AXI_TYPEDEF_REQ_T     (slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t)
    `AXI_TYPEDEF_RESP_T    (slv_rsp_t, b_chan_t, slv_r_chan_t)
   
    `REG_BUS_TYPEDEF_REQ   (reg_req_t, addr_t, slv_data_t, slv_strb_t)
@@ -113,7 +113,7 @@ module axi_scmi_mailbox
      .aw_chan_t          ( aw_chan_t          ),
      .mst_w_chan_t       ( slv_w_chan_t       ),
      .slv_w_chan_t       ( mst_w_chan_t       ),
-     .b_chan_t           ( b_chan_ t          ),
+     .b_chan_t           ( b_chan_t           ),
      .ar_chan_t          ( ar_chan_t          ),
      .mst_r_chan_t       ( slv_r_chan_t       ),
      .slv_r_chan_t       ( mst_r_chan_t       ),
@@ -135,19 +135,21 @@ module axi_scmi_mailbox
    axi_to_reg #(
      .ADDR_WIDTH    ( AXI_ADDR_WIDTH     ),
      .DATA_WIDTH    ( AXI_SLV_DATA_WIDTH ),
-     .BUFFER_DEPTH  ( 1                  ),
+     .ID_WIDTH      ( AXI_ID_WIDTH       ),
+     .USER_WIDTH    ( AXI_USER_WIDTH     ),
      .DECOUPLE_W    ( 0                  ),
      .axi_req_t     ( slv_req_t          ),
-     .axi_rsp_t     ( slv_resp_t         ),
+     .axi_rsp_t     ( slv_rsp_t          ),
      .reg_req_t     ( reg_req_t          ),
      .reg_rsp_t     ( reg_rsp_t          )
    ) u_axi2reg_intf (
      .clk_i,
      .rst_ni,
-     .axi_lite_req_i( axi32_mbox_req ),
-     .axi_lite_rsp_o( axi32_mbox_rsp ),
-     .reg_req_o     ( reg_req        ),
-     .reg_rsp_i     ( reg_rsp        )
+     .testmode_i ( 1'b0           ),
+     .axi_req_i  ( axi32_mbox_req ),
+     .axi_rsp_o  ( axi32_mbox_rsp ),
+     .reg_req_o  ( reg_req        ),
+     .reg_rsp_i  ( reg_rsp        )
    );
 
    scmi_reg_top #(
