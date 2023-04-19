@@ -1,0 +1,105 @@
+// Copyright lowRISC contributors.
+// Copyright 2023 ETH Zurich and University of Bologna.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "mailbox",
+  clock_primary: "clk_i",
+  bus_interfaces: [
+    { protocol: "reg_iface", direction: "device"}
+  ],
+
+  regwidth: "32",
+  registers: [
+    { name: "INT_SND_STATUS",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "status",
+          desc: "Sender side interrupt status. Receiver confirms letter."
+        }
+      ],
+    },
+    { name: "INT_SND_SET",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "set",
+          desc: "Sender side interrupt set. Receiver confirms letter."
+        }
+      ],
+    },
+    { name: "INT_SND_CLEAR",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "clear",
+          desc: "Sender side interrupt clear. Receiver confirms letter."
+        }
+      ],
+    },
+    { name: "INT_RCV_STATUS",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "status",
+          desc: "Receiver side interrupt status. Sender notifies receiver of a new letter arriving."
+        }
+      ],
+    },
+    { name: "INT_RCV_SET",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "set",
+          desc: "Receiver side interrupt set. Sender notifies receiver of a new letter arriving."
+        }
+      ],
+    },
+
+    { name: "INT_RCV_CLEAR",
+      desc: "",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:1", name: "reserved", desc: "reserved", swaccess: "ro", hwaccess: "none"},
+        { bits: "0",
+          name: "clear",
+          desc: "Receiver side interrupt clear. Sender notifies receiver of a new letter arriving."
+        }
+      ],
+    },
+
+    { name: "LETTER0",
+      desc: "Memory region to put a message",
+      swaccess: "rw",
+      hwaccess: "none",
+      fields: [
+        { bits: "31:0" }
+      ],
+    },
+    { name: "LETTER1",
+      desc: "Memory region to put a message",
+      swaccess: "rw",
+      hwaccess: "none",
+      fields: [
+        { bits: "31:0" }
+      ],
+    },
+  ],
+}
