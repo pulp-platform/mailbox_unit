@@ -12,33 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# SPDX-License-Identifier: Apache-2.0
-# Author: Robert Balas
+# Author: Robert Balas <balasr@iis.ee.ethz.ch>
 
 # Generate C header and SystemVerilog files
 
 REGTOOL = regtool.py
 
-all: headers srcs
+SRCS = mailbox_reg_top.sv mailbox_reg_pkg.sv
 
-srcs: clicint_reg_pkg.sv clicint_reg_top.sv mclic_reg_pkg.sv mclic_reg_top.sv
+#all: srcs headers
+all: srcs
 
-clicint_reg_pkg.sv clicint_reg_top.sv: clicint.hjson
+srcs: $(SRCS)
+
+
+mailbox_reg_top.sv: mailbox.hjson
 	$(REGTOOL) -r $< -t .
 
-mclic_reg_pkg.sv mclic_reg_top.sv: mclic.hjson
-	$(REGTOOL) -r $< -t .
+headers: mailbox.h
 
-headers: clic.h
-
-clic.h: mclic.hjson
-	$(REGTOOL) --cdefines mclic.hjson > $@
+mailbox.h: mailbox.hjson
+	$(REGTOOL) --cdefines $< > $@
 
 .PHONY: install
 install:
-	cp mclic_reg_pkg.sv mclic_reg_top.sv clicint_reg_pkg.sv clicint_reg_top.sv ..
+	cp $(SRCS) ../rtl
 
 .PHONY: clean
 clean:
-	rm clic.h mclic_reg_pkg.sv mclic_reg_top.sv clicint_reg_pkg.sv clicint_reg_top.sv
-
+	rm $(SRCS)
