@@ -2,6 +2,12 @@
 // Copyright 2023 ETH Zurich and University of Bologna.
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
+
+// Maicol Ciani <maicol.ciani@unibo.it>
+// Robert Balas <balasr@iis.ee.ethz.ch>
+
+// Register layout of one mailbox
+
 {
   name: "mailbox",
   clock_primary: "clk_i",
