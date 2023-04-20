@@ -10,7 +10,7 @@
 module mailbox_reg_top #(
     parameter type reg_req_t = logic,
     parameter type reg_rsp_t = logic,
-    parameter int AW = 5
+    parameter int AW = 8
 ) (
   input clk_i,
   input rst_ni,
@@ -18,6 +18,7 @@ module mailbox_reg_top #(
   output reg_rsp_t reg_rsp_o,
   // To HW
   output mailbox_reg_pkg::mailbox_reg2hw_t reg2hw, // Write
+  input  mailbox_reg_pkg::mailbox_hw2reg_t hw2reg, // Read
 
 
   // Config
@@ -67,30 +68,38 @@ module mailbox_reg_top #(
   // Define SW related signals
   // Format: <reg>_<field>_{wd|we|qs}
   //        or <reg>_{wd|we|qs} if field == 1 or 0
-  logic int_snd_status_status_qs;
-  logic int_snd_status_status_wd;
-  logic int_snd_status_status_we;
-  logic [30:0] int_snd_status_reserved_qs;
-  logic int_snd_set_set_qs;
-  logic int_snd_set_set_wd;
-  logic int_snd_set_set_we;
-  logic [30:0] int_snd_set_reserved_qs;
-  logic int_snd_clear_clear_qs;
-  logic int_snd_clear_clear_wd;
-  logic int_snd_clear_clear_we;
-  logic [30:0] int_snd_clear_reserved_qs;
-  logic int_rcv_status_status_qs;
-  logic int_rcv_status_status_wd;
-  logic int_rcv_status_status_we;
-  logic [30:0] int_rcv_status_reserved_qs;
-  logic int_rcv_set_set_qs;
-  logic int_rcv_set_set_wd;
-  logic int_rcv_set_set_we;
-  logic [30:0] int_rcv_set_reserved_qs;
-  logic int_rcv_clear_clear_qs;
-  logic int_rcv_clear_clear_wd;
-  logic int_rcv_clear_clear_we;
-  logic [30:0] int_rcv_clear_reserved_qs;
+  logic irq_snd_stat_stat_qs;
+  logic irq_snd_stat_stat_re;
+  logic [30:0] irq_snd_stat_reserved_qs;
+  logic irq_snd_stat_reserved_re;
+  logic irq_snd_set_set_wd;
+  logic irq_snd_set_set_we;
+  logic [30:0] irq_snd_set_reserved_qs;
+  logic irq_snd_set_reserved_re;
+  logic irq_snd_clr_clr_wd;
+  logic irq_snd_clr_clr_we;
+  logic [30:0] irq_snd_clr_reserved_qs;
+  logic irq_snd_clr_reserved_re;
+  logic irq_snd_en_en_qs;
+  logic irq_snd_en_en_wd;
+  logic irq_snd_en_en_we;
+  logic [30:0] irq_snd_en_reserved_qs;
+  logic irq_rcv_stat_stat_qs;
+  logic irq_rcv_stat_stat_re;
+  logic [30:0] irq_rcv_stat_reserved_qs;
+  logic irq_rcv_stat_reserved_re;
+  logic irq_rcv_set_set_wd;
+  logic irq_rcv_set_set_we;
+  logic [30:0] irq_rcv_set_reserved_qs;
+  logic irq_rcv_set_reserved_re;
+  logic irq_rcv_clr_clr_wd;
+  logic irq_rcv_clr_clr_we;
+  logic [30:0] irq_rcv_clr_reserved_qs;
+  logic irq_rcv_clr_reserved_re;
+  logic irq_rcv_en_en_qs;
+  logic irq_rcv_en_en_wd;
+  logic irq_rcv_en_en_we;
+  logic [30:0] irq_rcv_en_reserved_qs;
   logic [31:0] letter0_qs;
   logic [31:0] letter0_wd;
   logic letter0_we;
@@ -99,53 +108,116 @@ module mailbox_reg_top #(
   logic letter1_we;
 
   // Register instances
-  // R[int_snd_status]: V(False)
+  // R[irq_snd_stat]: V(True)
 
-  //   F[status]: 0:0
-  prim_subreg #(
-    .DW      (1),
-    .SWACCESS("RW"),
-    .RESVAL  (1'h0)
-  ) u_int_snd_status_status (
-    .clk_i   (clk_i    ),
-    .rst_ni  (rst_ni  ),
-
-    // from register interface
-    .we     (int_snd_status_status_we),
-    .wd     (int_snd_status_status_wd),
-
-    // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
-
-    // to internal hardware
+  //   F[stat]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_snd_stat_stat (
+    .re     (irq_snd_stat_stat_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      (hw2reg.irq_snd_stat.stat.d),
+    .qre    (),
     .qe     (),
-    .q      (reg2hw.int_snd_status.status.q ),
-
-    // to register interface (read)
-    .qs     (int_snd_status_status_qs)
+    .q      (reg2hw.irq_snd_stat.stat.q ),
+    .qs     (irq_snd_stat_stat_qs)
   );
 
 
   //   F[reserved]: 31:1
-  // constant-only read
-  assign int_snd_status_reserved_qs = 31'h0;
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_snd_stat_reserved (
+    .re     (irq_snd_stat_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
+    .qe     (),
+    .q      (),
+    .qs     (irq_snd_stat_reserved_qs)
+  );
 
 
-  // R[int_snd_set]: V(False)
+  // R[irq_snd_set]: V(True)
 
   //   F[set]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_snd_set_set (
+    .re     (1'b0),
+    .we     (irq_snd_set_set_we),
+    .wd     (irq_snd_set_set_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (reg2hw.irq_snd_set.set.qe),
+    .q      (reg2hw.irq_snd_set.set.q ),
+    .qs     ()
+  );
+
+
+  //   F[reserved]: 31:1
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_snd_set_reserved (
+    .re     (irq_snd_set_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
+    .qe     (),
+    .q      (),
+    .qs     (irq_snd_set_reserved_qs)
+  );
+
+
+  // R[irq_snd_clr]: V(True)
+
+  //   F[clr]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_snd_clr_clr (
+    .re     (1'b0),
+    .we     (irq_snd_clr_clr_we),
+    .wd     (irq_snd_clr_clr_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (reg2hw.irq_snd_clr.clr.qe),
+    .q      (reg2hw.irq_snd_clr.clr.q ),
+    .qs     ()
+  );
+
+
+  //   F[reserved]: 31:1
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_snd_clr_reserved (
+    .re     (irq_snd_clr_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
+    .qe     (),
+    .q      (),
+    .qs     (irq_snd_clr_reserved_qs)
+  );
+
+
+  // R[irq_snd_en]: V(False)
+
+  //   F[en]: 0:0
   prim_subreg #(
     .DW      (1),
     .SWACCESS("RW"),
     .RESVAL  (1'h0)
-  ) u_int_snd_set_set (
+  ) u_irq_snd_en_en (
     .clk_i   (clk_i    ),
     .rst_ni  (rst_ni  ),
 
     // from register interface
-    .we     (int_snd_set_set_we),
-    .wd     (int_snd_set_set_wd),
+    .we     (irq_snd_en_en_we),
+    .wd     (irq_snd_en_en_wd),
 
     // from internal hardware
     .de     (1'b0),
@@ -153,98 +225,128 @@ module mailbox_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (reg2hw.int_snd_set.set.q ),
+    .q      (reg2hw.irq_snd_en.en.q ),
 
     // to register interface (read)
-    .qs     (int_snd_set_set_qs)
+    .qs     (irq_snd_en_en_qs)
   );
 
 
   //   F[reserved]: 31:1
   // constant-only read
-  assign int_snd_set_reserved_qs = 31'h0;
+  assign irq_snd_en_reserved_qs = 31'h0;
 
 
-  // R[int_snd_clear]: V(False)
+  // R[irq_rcv_stat]: V(True)
 
-  //   F[clear]: 0:0
-  prim_subreg #(
-    .DW      (1),
-    .SWACCESS("RW"),
-    .RESVAL  (1'h0)
-  ) u_int_snd_clear_clear (
-    .clk_i   (clk_i    ),
-    .rst_ni  (rst_ni  ),
-
-    // from register interface
-    .we     (int_snd_clear_clear_we),
-    .wd     (int_snd_clear_clear_wd),
-
-    // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
-
-    // to internal hardware
+  //   F[stat]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_rcv_stat_stat (
+    .re     (irq_rcv_stat_stat_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      (hw2reg.irq_rcv_stat.stat.d),
+    .qre    (),
     .qe     (),
-    .q      (reg2hw.int_snd_clear.clear.q ),
-
-    // to register interface (read)
-    .qs     (int_snd_clear_clear_qs)
+    .q      (reg2hw.irq_rcv_stat.stat.q ),
+    .qs     (irq_rcv_stat_stat_qs)
   );
 
 
   //   F[reserved]: 31:1
-  // constant-only read
-  assign int_snd_clear_reserved_qs = 31'h0;
-
-
-  // R[int_rcv_status]: V(False)
-
-  //   F[status]: 0:0
-  prim_subreg #(
-    .DW      (1),
-    .SWACCESS("RW"),
-    .RESVAL  (1'h0)
-  ) u_int_rcv_status_status (
-    .clk_i   (clk_i    ),
-    .rst_ni  (rst_ni  ),
-
-    // from register interface
-    .we     (int_rcv_status_status_we),
-    .wd     (int_rcv_status_status_wd),
-
-    // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
-
-    // to internal hardware
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_rcv_stat_reserved (
+    .re     (irq_rcv_stat_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
     .qe     (),
-    .q      (reg2hw.int_rcv_status.status.q ),
-
-    // to register interface (read)
-    .qs     (int_rcv_status_status_qs)
+    .q      (),
+    .qs     (irq_rcv_stat_reserved_qs)
   );
 
 
-  //   F[reserved]: 31:1
-  // constant-only read
-  assign int_rcv_status_reserved_qs = 31'h0;
-
-
-  // R[int_rcv_set]: V(False)
+  // R[irq_rcv_set]: V(True)
 
   //   F[set]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_rcv_set_set (
+    .re     (1'b0),
+    .we     (irq_rcv_set_set_we),
+    .wd     (irq_rcv_set_set_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (reg2hw.irq_rcv_set.set.qe),
+    .q      (reg2hw.irq_rcv_set.set.q ),
+    .qs     ()
+  );
+
+
+  //   F[reserved]: 31:1
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_rcv_set_reserved (
+    .re     (irq_rcv_set_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
+    .qe     (),
+    .q      (),
+    .qs     (irq_rcv_set_reserved_qs)
+  );
+
+
+  // R[irq_rcv_clr]: V(True)
+
+  //   F[clr]: 0:0
+  prim_subreg_ext #(
+    .DW    (1)
+  ) u_irq_rcv_clr_clr (
+    .re     (1'b0),
+    .we     (irq_rcv_clr_clr_we),
+    .wd     (irq_rcv_clr_clr_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (reg2hw.irq_rcv_clr.clr.qe),
+    .q      (reg2hw.irq_rcv_clr.clr.q ),
+    .qs     ()
+  );
+
+
+  //   F[reserved]: 31:1
+  prim_subreg_ext #(
+    .DW    (31)
+  ) u_irq_rcv_clr_reserved (
+    .re     (irq_rcv_clr_reserved_re),
+    .we     (1'b0),
+    .wd     ('0),
+    .d      ('0),
+    .qre    (),
+    .qe     (),
+    .q      (),
+    .qs     (irq_rcv_clr_reserved_qs)
+  );
+
+
+  // R[irq_rcv_en]: V(False)
+
+  //   F[en]: 0:0
   prim_subreg #(
     .DW      (1),
     .SWACCESS("RW"),
     .RESVAL  (1'h0)
-  ) u_int_rcv_set_set (
+  ) u_irq_rcv_en_en (
     .clk_i   (clk_i    ),
     .rst_ni  (rst_ni  ),
 
     // from register interface
-    .we     (int_rcv_set_set_we),
-    .wd     (int_rcv_set_set_wd),
+    .we     (irq_rcv_en_en_we),
+    .wd     (irq_rcv_en_en_wd),
 
     // from internal hardware
     .de     (1'b0),
@@ -252,49 +354,16 @@ module mailbox_reg_top #(
 
     // to internal hardware
     .qe     (),
-    .q      (reg2hw.int_rcv_set.set.q ),
+    .q      (reg2hw.irq_rcv_en.en.q ),
 
     // to register interface (read)
-    .qs     (int_rcv_set_set_qs)
+    .qs     (irq_rcv_en_en_qs)
   );
 
 
   //   F[reserved]: 31:1
   // constant-only read
-  assign int_rcv_set_reserved_qs = 31'h0;
-
-
-  // R[int_rcv_clear]: V(False)
-
-  //   F[clear]: 0:0
-  prim_subreg #(
-    .DW      (1),
-    .SWACCESS("RW"),
-    .RESVAL  (1'h0)
-  ) u_int_rcv_clear_clear (
-    .clk_i   (clk_i    ),
-    .rst_ni  (rst_ni  ),
-
-    // from register interface
-    .we     (int_rcv_clear_clear_we),
-    .wd     (int_rcv_clear_clear_wd),
-
-    // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
-
-    // to internal hardware
-    .qe     (),
-    .q      (reg2hw.int_rcv_clear.clear.q ),
-
-    // to register interface (read)
-    .qs     (int_rcv_clear_clear_qs)
-  );
-
-
-  //   F[reserved]: 31:1
-  // constant-only read
-  assign int_rcv_clear_reserved_qs = 31'h0;
+  assign irq_rcv_en_reserved_qs = 31'h0;
 
 
   // R[letter0]: V(False)
@@ -353,17 +422,19 @@ module mailbox_reg_top #(
 
 
 
-  logic [7:0] addr_hit;
+  logic [9:0] addr_hit;
   always_comb begin
     addr_hit = '0;
-    addr_hit[0] = (reg_addr == MAILBOX_INT_SND_STATUS_OFFSET);
-    addr_hit[1] = (reg_addr == MAILBOX_INT_SND_SET_OFFSET);
-    addr_hit[2] = (reg_addr == MAILBOX_INT_SND_CLEAR_OFFSET);
-    addr_hit[3] = (reg_addr == MAILBOX_INT_RCV_STATUS_OFFSET);
-    addr_hit[4] = (reg_addr == MAILBOX_INT_RCV_SET_OFFSET);
-    addr_hit[5] = (reg_addr == MAILBOX_INT_RCV_CLEAR_OFFSET);
-    addr_hit[6] = (reg_addr == MAILBOX_LETTER0_OFFSET);
-    addr_hit[7] = (reg_addr == MAILBOX_LETTER1_OFFSET);
+    addr_hit[0] = (reg_addr == MAILBOX_IRQ_SND_STAT_OFFSET);
+    addr_hit[1] = (reg_addr == MAILBOX_IRQ_SND_SET_OFFSET);
+    addr_hit[2] = (reg_addr == MAILBOX_IRQ_SND_CLR_OFFSET);
+    addr_hit[3] = (reg_addr == MAILBOX_IRQ_SND_EN_OFFSET);
+    addr_hit[4] = (reg_addr == MAILBOX_IRQ_RCV_STAT_OFFSET);
+    addr_hit[5] = (reg_addr == MAILBOX_IRQ_RCV_SET_OFFSET);
+    addr_hit[6] = (reg_addr == MAILBOX_IRQ_RCV_CLR_OFFSET);
+    addr_hit[7] = (reg_addr == MAILBOX_IRQ_RCV_EN_OFFSET);
+    addr_hit[8] = (reg_addr == MAILBOX_LETTER0_OFFSET);
+    addr_hit[9] = (reg_addr == MAILBOX_LETTER1_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -378,31 +449,49 @@ module mailbox_reg_top #(
                (addr_hit[4] & (|(MAILBOX_PERMIT[4] & ~reg_be))) |
                (addr_hit[5] & (|(MAILBOX_PERMIT[5] & ~reg_be))) |
                (addr_hit[6] & (|(MAILBOX_PERMIT[6] & ~reg_be))) |
-               (addr_hit[7] & (|(MAILBOX_PERMIT[7] & ~reg_be)))));
+               (addr_hit[7] & (|(MAILBOX_PERMIT[7] & ~reg_be))) |
+               (addr_hit[8] & (|(MAILBOX_PERMIT[8] & ~reg_be))) |
+               (addr_hit[9] & (|(MAILBOX_PERMIT[9] & ~reg_be)))));
   end
 
-  assign int_snd_status_status_we = addr_hit[0] & reg_we & !reg_error;
-  assign int_snd_status_status_wd = reg_wdata[0];
+  assign irq_snd_stat_stat_re = addr_hit[0] & reg_re & !reg_error;
 
-  assign int_snd_set_set_we = addr_hit[1] & reg_we & !reg_error;
-  assign int_snd_set_set_wd = reg_wdata[0];
+  assign irq_snd_stat_reserved_re = addr_hit[0] & reg_re & !reg_error;
 
-  assign int_snd_clear_clear_we = addr_hit[2] & reg_we & !reg_error;
-  assign int_snd_clear_clear_wd = reg_wdata[0];
+  assign irq_snd_set_set_we = addr_hit[1] & reg_we & !reg_error;
+  assign irq_snd_set_set_wd = reg_wdata[0];
 
-  assign int_rcv_status_status_we = addr_hit[3] & reg_we & !reg_error;
-  assign int_rcv_status_status_wd = reg_wdata[0];
+  assign irq_snd_set_reserved_re = addr_hit[1] & reg_re & !reg_error;
 
-  assign int_rcv_set_set_we = addr_hit[4] & reg_we & !reg_error;
-  assign int_rcv_set_set_wd = reg_wdata[0];
+  assign irq_snd_clr_clr_we = addr_hit[2] & reg_we & !reg_error;
+  assign irq_snd_clr_clr_wd = reg_wdata[0];
 
-  assign int_rcv_clear_clear_we = addr_hit[5] & reg_we & !reg_error;
-  assign int_rcv_clear_clear_wd = reg_wdata[0];
+  assign irq_snd_clr_reserved_re = addr_hit[2] & reg_re & !reg_error;
 
-  assign letter0_we = addr_hit[6] & reg_we & !reg_error;
+  assign irq_snd_en_en_we = addr_hit[3] & reg_we & !reg_error;
+  assign irq_snd_en_en_wd = reg_wdata[0];
+
+  assign irq_rcv_stat_stat_re = addr_hit[4] & reg_re & !reg_error;
+
+  assign irq_rcv_stat_reserved_re = addr_hit[4] & reg_re & !reg_error;
+
+  assign irq_rcv_set_set_we = addr_hit[5] & reg_we & !reg_error;
+  assign irq_rcv_set_set_wd = reg_wdata[0];
+
+  assign irq_rcv_set_reserved_re = addr_hit[5] & reg_re & !reg_error;
+
+  assign irq_rcv_clr_clr_we = addr_hit[6] & reg_we & !reg_error;
+  assign irq_rcv_clr_clr_wd = reg_wdata[0];
+
+  assign irq_rcv_clr_reserved_re = addr_hit[6] & reg_re & !reg_error;
+
+  assign irq_rcv_en_en_we = addr_hit[7] & reg_we & !reg_error;
+  assign irq_rcv_en_en_wd = reg_wdata[0];
+
+  assign letter0_we = addr_hit[8] & reg_we & !reg_error;
   assign letter0_wd = reg_wdata[31:0];
 
-  assign letter1_we = addr_hit[7] & reg_we & !reg_error;
+  assign letter1_we = addr_hit[9] & reg_we & !reg_error;
   assign letter1_wd = reg_wdata[31:0];
 
   // Read data return
@@ -410,40 +499,50 @@ module mailbox_reg_top #(
     reg_rdata_next = '0;
     unique case (1'b1)
       addr_hit[0]: begin
-        reg_rdata_next[0] = int_snd_status_status_qs;
-        reg_rdata_next[31:1] = int_snd_status_reserved_qs;
+        reg_rdata_next[0] = irq_snd_stat_stat_qs;
+        reg_rdata_next[31:1] = irq_snd_stat_reserved_qs;
       end
 
       addr_hit[1]: begin
-        reg_rdata_next[0] = int_snd_set_set_qs;
-        reg_rdata_next[31:1] = int_snd_set_reserved_qs;
+        reg_rdata_next[0] = '0;
+        reg_rdata_next[31:1] = irq_snd_set_reserved_qs;
       end
 
       addr_hit[2]: begin
-        reg_rdata_next[0] = int_snd_clear_clear_qs;
-        reg_rdata_next[31:1] = int_snd_clear_reserved_qs;
+        reg_rdata_next[0] = '0;
+        reg_rdata_next[31:1] = irq_snd_clr_reserved_qs;
       end
 
       addr_hit[3]: begin
-        reg_rdata_next[0] = int_rcv_status_status_qs;
-        reg_rdata_next[31:1] = int_rcv_status_reserved_qs;
+        reg_rdata_next[0] = irq_snd_en_en_qs;
+        reg_rdata_next[31:1] = irq_snd_en_reserved_qs;
       end
 
       addr_hit[4]: begin
-        reg_rdata_next[0] = int_rcv_set_set_qs;
-        reg_rdata_next[31:1] = int_rcv_set_reserved_qs;
+        reg_rdata_next[0] = irq_rcv_stat_stat_qs;
+        reg_rdata_next[31:1] = irq_rcv_stat_reserved_qs;
       end
 
       addr_hit[5]: begin
-        reg_rdata_next[0] = int_rcv_clear_clear_qs;
-        reg_rdata_next[31:1] = int_rcv_clear_reserved_qs;
+        reg_rdata_next[0] = '0;
+        reg_rdata_next[31:1] = irq_rcv_set_reserved_qs;
       end
 
       addr_hit[6]: begin
-        reg_rdata_next[31:0] = letter0_qs;
+        reg_rdata_next[0] = '0;
+        reg_rdata_next[31:1] = irq_rcv_clr_reserved_qs;
       end
 
       addr_hit[7]: begin
+        reg_rdata_next[0] = irq_rcv_en_en_qs;
+        reg_rdata_next[31:1] = irq_rcv_en_reserved_qs;
+      end
+
+      addr_hit[8]: begin
+        reg_rdata_next[31:0] = letter0_qs;
+      end
+
+      addr_hit[9]: begin
         reg_rdata_next[31:0] = letter1_qs;
       end
 

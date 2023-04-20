@@ -7,7 +7,7 @@
 package mailbox_reg_pkg;
 
   // Address widths within the block
-  parameter int BlockAw = 5;
+  parameter int BlockAw = 8;
 
   ////////////////////////////
   // Typedefs for registers //
@@ -16,81 +16,131 @@ package mailbox_reg_pkg;
   typedef struct packed {
     struct packed {
       logic        q;
-    } status;
-  } mailbox_reg2hw_int_snd_status_reg_t;
+    } stat;
+  } mailbox_reg2hw_irq_snd_stat_reg_t;
 
   typedef struct packed {
     struct packed {
       logic        q;
+      logic        qe;
     } set;
-  } mailbox_reg2hw_int_snd_set_reg_t;
+  } mailbox_reg2hw_irq_snd_set_reg_t;
 
   typedef struct packed {
     struct packed {
       logic        q;
-    } clear;
-  } mailbox_reg2hw_int_snd_clear_reg_t;
+      logic        qe;
+    } clr;
+  } mailbox_reg2hw_irq_snd_clr_reg_t;
 
   typedef struct packed {
     struct packed {
       logic        q;
-    } status;
-  } mailbox_reg2hw_int_rcv_status_reg_t;
+    } en;
+  } mailbox_reg2hw_irq_snd_en_reg_t;
 
   typedef struct packed {
     struct packed {
       logic        q;
+    } stat;
+  } mailbox_reg2hw_irq_rcv_stat_reg_t;
+
+  typedef struct packed {
+    struct packed {
+      logic        q;
+      logic        qe;
     } set;
-  } mailbox_reg2hw_int_rcv_set_reg_t;
+  } mailbox_reg2hw_irq_rcv_set_reg_t;
 
   typedef struct packed {
     struct packed {
       logic        q;
-    } clear;
-  } mailbox_reg2hw_int_rcv_clear_reg_t;
+      logic        qe;
+    } clr;
+  } mailbox_reg2hw_irq_rcv_clr_reg_t;
+
+  typedef struct packed {
+    struct packed {
+      logic        q;
+    } en;
+  } mailbox_reg2hw_irq_rcv_en_reg_t;
+
+  typedef struct packed {
+    struct packed {
+      logic        d;
+    } stat;
+  } mailbox_hw2reg_irq_snd_stat_reg_t;
+
+  typedef struct packed {
+    struct packed {
+      logic        d;
+    } stat;
+  } mailbox_hw2reg_irq_rcv_stat_reg_t;
 
   // Register -> HW type
   typedef struct packed {
-    mailbox_reg2hw_int_snd_status_reg_t int_snd_status; // [5:5]
-    mailbox_reg2hw_int_snd_set_reg_t int_snd_set; // [4:4]
-    mailbox_reg2hw_int_snd_clear_reg_t int_snd_clear; // [3:3]
-    mailbox_reg2hw_int_rcv_status_reg_t int_rcv_status; // [2:2]
-    mailbox_reg2hw_int_rcv_set_reg_t int_rcv_set; // [1:1]
-    mailbox_reg2hw_int_rcv_clear_reg_t int_rcv_clear; // [0:0]
+    mailbox_reg2hw_irq_snd_stat_reg_t irq_snd_stat; // [11:11]
+    mailbox_reg2hw_irq_snd_set_reg_t irq_snd_set; // [10:9]
+    mailbox_reg2hw_irq_snd_clr_reg_t irq_snd_clr; // [8:7]
+    mailbox_reg2hw_irq_snd_en_reg_t irq_snd_en; // [6:6]
+    mailbox_reg2hw_irq_rcv_stat_reg_t irq_rcv_stat; // [5:5]
+    mailbox_reg2hw_irq_rcv_set_reg_t irq_rcv_set; // [4:3]
+    mailbox_reg2hw_irq_rcv_clr_reg_t irq_rcv_clr; // [2:1]
+    mailbox_reg2hw_irq_rcv_en_reg_t irq_rcv_en; // [0:0]
   } mailbox_reg2hw_t;
 
+  // HW -> register type
+  typedef struct packed {
+    mailbox_hw2reg_irq_snd_stat_reg_t irq_snd_stat; // [1:1]
+    mailbox_hw2reg_irq_rcv_stat_reg_t irq_rcv_stat; // [0:0]
+  } mailbox_hw2reg_t;
+
   // Register offsets
-  parameter logic [BlockAw-1:0] MAILBOX_INT_SND_STATUS_OFFSET = 5'h 0;
-  parameter logic [BlockAw-1:0] MAILBOX_INT_SND_SET_OFFSET = 5'h 4;
-  parameter logic [BlockAw-1:0] MAILBOX_INT_SND_CLEAR_OFFSET = 5'h 8;
-  parameter logic [BlockAw-1:0] MAILBOX_INT_RCV_STATUS_OFFSET = 5'h c;
-  parameter logic [BlockAw-1:0] MAILBOX_INT_RCV_SET_OFFSET = 5'h 10;
-  parameter logic [BlockAw-1:0] MAILBOX_INT_RCV_CLEAR_OFFSET = 5'h 14;
-  parameter logic [BlockAw-1:0] MAILBOX_LETTER0_OFFSET = 5'h 18;
-  parameter logic [BlockAw-1:0] MAILBOX_LETTER1_OFFSET = 5'h 1c;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_SND_STAT_OFFSET = 8'h 0;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_SND_SET_OFFSET = 8'h 4;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_SND_CLR_OFFSET = 8'h 8;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_SND_EN_OFFSET = 8'h c;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_RCV_STAT_OFFSET = 8'h 40;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_RCV_SET_OFFSET = 8'h 44;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_RCV_CLR_OFFSET = 8'h 48;
+  parameter logic [BlockAw-1:0] MAILBOX_IRQ_RCV_EN_OFFSET = 8'h 4c;
+  parameter logic [BlockAw-1:0] MAILBOX_LETTER0_OFFSET = 8'h 80;
+  parameter logic [BlockAw-1:0] MAILBOX_LETTER1_OFFSET = 8'h 84;
+
+  // Reset values for hwext registers and their fields
+  parameter logic [31:0] MAILBOX_IRQ_SND_STAT_RESVAL = 32'h 0;
+  parameter logic [31:0] MAILBOX_IRQ_SND_SET_RESVAL = 32'h 0;
+  parameter logic [31:0] MAILBOX_IRQ_SND_CLR_RESVAL = 32'h 0;
+  parameter logic [31:0] MAILBOX_IRQ_RCV_STAT_RESVAL = 32'h 0;
+  parameter logic [31:0] MAILBOX_IRQ_RCV_SET_RESVAL = 32'h 0;
+  parameter logic [31:0] MAILBOX_IRQ_RCV_CLR_RESVAL = 32'h 0;
 
   // Register index
   typedef enum int {
-    MAILBOX_INT_SND_STATUS,
-    MAILBOX_INT_SND_SET,
-    MAILBOX_INT_SND_CLEAR,
-    MAILBOX_INT_RCV_STATUS,
-    MAILBOX_INT_RCV_SET,
-    MAILBOX_INT_RCV_CLEAR,
+    MAILBOX_IRQ_SND_STAT,
+    MAILBOX_IRQ_SND_SET,
+    MAILBOX_IRQ_SND_CLR,
+    MAILBOX_IRQ_SND_EN,
+    MAILBOX_IRQ_RCV_STAT,
+    MAILBOX_IRQ_RCV_SET,
+    MAILBOX_IRQ_RCV_CLR,
+    MAILBOX_IRQ_RCV_EN,
     MAILBOX_LETTER0,
     MAILBOX_LETTER1
   } mailbox_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] MAILBOX_PERMIT [8] = '{
-    4'b 1111, // index[0] MAILBOX_INT_SND_STATUS
-    4'b 1111, // index[1] MAILBOX_INT_SND_SET
-    4'b 1111, // index[2] MAILBOX_INT_SND_CLEAR
-    4'b 1111, // index[3] MAILBOX_INT_RCV_STATUS
-    4'b 1111, // index[4] MAILBOX_INT_RCV_SET
-    4'b 1111, // index[5] MAILBOX_INT_RCV_CLEAR
-    4'b 1111, // index[6] MAILBOX_LETTER0
-    4'b 1111  // index[7] MAILBOX_LETTER1
+  parameter logic [3:0] MAILBOX_PERMIT [10] = '{
+    4'b 1111, // index[0] MAILBOX_IRQ_SND_STAT
+    4'b 1111, // index[1] MAILBOX_IRQ_SND_SET
+    4'b 1111, // index[2] MAILBOX_IRQ_SND_CLR
+    4'b 1111, // index[3] MAILBOX_IRQ_SND_EN
+    4'b 1111, // index[4] MAILBOX_IRQ_RCV_STAT
+    4'b 1111, // index[5] MAILBOX_IRQ_RCV_SET
+    4'b 1111, // index[6] MAILBOX_IRQ_RCV_CLR
+    4'b 1111, // index[7] MAILBOX_IRQ_RCV_EN
+    4'b 1111, // index[8] MAILBOX_LETTER0
+    4'b 1111  // index[9] MAILBOX_LETTER1
   };
 
 endpackage
