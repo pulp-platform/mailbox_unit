@@ -1,5 +1,5 @@
 package:
-  name: axi_scmi_mailbox
+  name: mailbox_unit
   
 dependencies:
 
