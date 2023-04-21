@@ -1,0 +1,11 @@
+gen/*.sv
+gen/*.h
+.bender/
+tb/modelsim.ini
+tb/transcript
+tb/work/
+tb/*.log
+tb/*.f
+tb/*.do
+tb/*.wlf
+

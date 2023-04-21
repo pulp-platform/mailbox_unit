@@ -7,218 +7,239 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-//
+
+// Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// Maicol Ciani <maicol.ciani@unibo.it>
+// Robert Balas <balasr@iis.ee.ethz.ch>
+
+// mailbox unit basic testbench
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-module mbox_tb #();
+module mbox_tb import axi_pkg::*; #(
+  parameter int NumMbox = 128
+)(
+);
 
-   import axi_pkg::*;
+ // timing parameters
+  localparam time CyclTime = 10ns;
+  localparam time ApplTime =  2ns;
+  localparam time TestTime =  8ns;
 
-   localparam time TA   = 1ns;
-   localparam time TT   = 2ns;
-   localparam int unsigned RTC_CLOCK_PERIOD = 30.517us;
+  // axi configuration
+  localparam int unsigned AxiAddrWidth      =  32'd32;    // Axi Address Width
+  localparam int unsigned AxiDataWidth      =  32'd32;    // Axi Data Width
 
-   logic rst_ni;
-   logic clk_i;
+  typedef logic [AxiAddrWidth-1:0] addr_t;
+  typedef logic [AxiDataWidth-1:0] data_t;
+  typedef logic [AxiDataWidth/8-1:0] strb_t;
 
-   logic irq_ibex, irq_ariane;
+  typedef enum addr_t {
+    IRQ_SND_STAT = addr_t'(0 * AxiDataWidth/8),
+    IRQ_SND_SET  = addr_t'(1 * AxiDataWidth/8),
+    IRQ_SND_CLR  = addr_t'(2 * AxiDataWidth/8),
+    IRQ_SND_EN   = addr_t'(3 * AxiDataWidth/8),
+    IRQ_RCV_STAT = addr_t'(16 * AxiDataWidth/8),
+    IRQ_RCV_SET  = addr_t'(17 * AxiDataWidth/8),
+    IRQ_RCV_CLR  = addr_t'(18 * AxiDataWidth/8),
+    IRQ_RCV_EN   = addr_t'(19 * AxiDataWidth/8),
+    LETTER0      = addr_t'(32 * AxiDataWidth/8),
+    LETTER1      = addr_t'(33 * AxiDataWidth/8)
+  } reg_addr_e;
 
-   semaphore lock;
+  typedef axi_test::axi_lite_rand_master #(
+    // AXI interface parameters
+    .AW ( AxiAddrWidth        ),
+    .DW ( AxiDataWidth        ),
+    // Stimuli application and test time
+    .TA ( ApplTime            ),
+    .TT ( TestTime            ),
+    .MIN_ADDR ( 32'h0000_0000 ),
+    .MAX_ADDR ( 32'h0001_3000 ),
+    .MAX_READ_TXNS  ( 10 ),
+    .MAX_WRITE_TXNS ( 10 )
+  ) rand_lite_master_t;
 
-   parameter int   AW = 32;   
-   parameter int   DW = 32;  
-   parameter int   AX_MIN_WAIT_CYCLES = 0;   
-   parameter int   AX_MAX_WAIT_CYCLES = 1;   
-   parameter int   W_MIN_WAIT_CYCLES = 0;   
-   parameter int   W_MAX_WAIT_CYCLES = 1;   
-   parameter int   RESP_MIN_WAIT_CYCLES = 0;
-   parameter int   RESP_MAX_WAIT_CYCLES = 1;
-   parameter int   NUM_BEATS = 100;
+  // DUT signals
+  logic               clk;
+  logic               rst_n;
+  logic               end_of_sim;
+  logic [NumMbox-1:0] rcv_irq;
+  logic [NumMbox-1:0] snd_irq;
 
-   localparam int unsigned SW = DW / 8;
-   
-   typedef logic [AW-1:0] addr_t;
-   typedef logic [DW-1:0] data_t;
-   typedef logic [SW-1:0] strb_t;
-      
-   typedef axi_test::axi_lite_rand_master #(  
-     .AW(AW),
-     .DW(DW),
-     .TA(TA),
-     .TT(TT),
-     .AX_MIN_WAIT_CYCLES(AX_MIN_WAIT_CYCLES),
-     .AX_MAX_WAIT_CYCLES(AX_MAX_WAIT_CYCLES),
-     .W_MIN_WAIT_CYCLES(W_MIN_WAIT_CYCLES),
-     .W_MAX_WAIT_CYCLES(W_MAX_WAIT_CYCLES),
-     .RESP_MIN_WAIT_CYCLES(RESP_MIN_WAIT_CYCLES),
-     .RESP_MAX_WAIT_CYCLES(RESP_MAX_WAIT_CYCLES),
-     .MIN_ADDR(32'h 00000000),
-     .MAX_ADDR(32'h 0000000A)
-  ) axi_lite_ran_master;
-   
-   AXI_LITE #(
-     .AXI_ADDR_WIDTH(AW),
-     .AXI_DATA_WIDTH(DW)
-   ) axi_lite_master ();
+  int unsigned test_failed;
 
-   AXI_LITE_DV #(
-     .AXI_ADDR_WIDTH(AW),
-     .AXI_DATA_WIDTH(DW)
-   ) axi_lite (clk_i);
-   
-   `AXI_LITE_TYPEDEF_AW_CHAN_T (axi_lite_aw_t, addr_t)
-   `AXI_LITE_TYPEDEF_W_CHAN_T  (axi_lite_w_t, data_t, strb_t)
-   `AXI_LITE_TYPEDEF_B_CHAN_T  (axi_lite_b_t)
-   `AXI_LITE_TYPEDEF_AR_CHAN_T (axi_lite_ar_t, addr_t)
-   `AXI_LITE_TYPEDEF_R_CHAN_T  (axi_lite_r_t, data_t)
-   
-   `AXI_LITE_TYPEDEF_REQ_T     (axi_lite_req_t, axi_lite_aw_t, axi_lite_w_t, axi_lite_ar_t)
-   `AXI_LITE_TYPEDEF_RESP_T    (axi_lite_resp_t, axi_lite_b_t, axi_lite_r_t)
-   
-   axi_lite_req_t  axi_lite_req_dec; //this is a struct driven by the master execpt for the address, that is driven by a decoder (mst addrs are not aligned)
-   axi_lite_req_t  axi_lite_req;
-   axi_lite_resp_t axi_lite_rsp;
-        
-   axi_lite_ran_master axi_lite_rand_master = new(axi_lite, "testing");
-   
-   `AXI_LITE_ASSIGN (axi_lite_master, axi_lite)
+  // AXI Interfaces
+  AXI_LITE #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      )
+  ) master ();
+  AXI_LITE_DV #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      )
+  ) master_dv (clk);
 
-   `AXI_LITE_ASSIGN_TO_REQ     (axi_lite_req, axi_lite_master)
-   `AXI_LITE_ASSIGN_FROM_RESP  (axi_lite_master, axi_lite_rsp)
-   
-   
-   assign axi_lite_req_dec.w_valid = axi_lite_req.w_valid;
-   assign axi_lite_req_dec.w.data  = axi_lite_req.w.data;
-   
-   // strobe must be always 4'b1111, regfile is protected against partial writes. This cannot be imposed to the rand master class, it must be fixed
-   assign axi_lite_req_dec.w.strb  = 4'h F;
-   
-   assign axi_lite_req_dec.b_ready = axi_lite_req.b_ready;
-   
-   assign axi_lite_req_dec.r_ready = axi_lite_req.r_ready;
-  
-   assign axi_lite_req_dec.ar.prot  = axi_lite_req.ar.prot;
-   assign axi_lite_req_dec.ar_valid = axi_lite_req.ar_valid;
-   //assign axi_lite_req.ar_ready     = axi_lite_req_dec.ar_ready;
+  `AXI_LITE_ASSIGN(master, master_dv)
 
-   assign axi_lite_req_dec.aw.prot  = axi_lite_req.aw.prot;
-   assign axi_lite_req_dec.aw_valid = axi_lite_req.aw_valid;
-   //assign axi_lite_req.aw_ready     = axi_lite_req_dec.aw_ready;
-   
-     
- /////////////////////dut/////////////////////
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_lite_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_lite_t, r_chan_lite_t)
 
-   axi_scmi_mailbox #(
-      .AXI_ADDR_WIDTH(32),
-      .axi_lite_req_t(axi_lite_req_t),
-      .axi_lite_resp_t(axi_lite_resp_t)
-   ) u_dut (
-      .clk_i(clk_i),
-      .rst_ni(rst_ni),
-      .axi_mbox_req(axi_lite_req_dec),
-      .axi_mbox_rsp(axi_lite_rsp),
-      .doorbell_irq_o(irq_ibex),
-      .completion_irq_o(irq_ariane)
-   );
+  axi_lite_req_t axi_lite_req;
+  axi_lite_resp_t axi_lite_resp;
 
- /////////////////////////////////////////////
-   
-   initial begin  : clock_rst_process
-     lock = new(1);
-     clk_i  = 1'b0;
-     rst_ni = 1'b0;
-     repeat (10)
-       #(RTC_CLOCK_PERIOD/2) clk_i = 1'b0;
-       rst_ni = 1'b1;
-     forever
-       #(RTC_CLOCK_PERIOD/2) clk_i = ~clk_i;
-   end
+  `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, master)
+  `AXI_LITE_ASSIGN_FROM_RESP(master, axi_lite_resp)
 
-   // The random address provided by the rand master is not aligned, thus the following "decoder" from 0->10 to the offsets
-   
-   always_comb begin :read_addr_decode //(maps 64bit rnd addr into the 10 regs addr)
-    if(~rst_ni)
-      axi_lite_req_dec.ar.addr = '0;
-    else begin
-      if(axi_lite_req.ar.addr[3:0] <= 4'h 1)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000000;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 2)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000004;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 3)
-        axi_lite_req_dec.ar.addr = 64'h 000000000000000C;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 4)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000008;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 5)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000010;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 6)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000014;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 7)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000018; 
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 8)
-        axi_lite_req_dec.ar.addr = 64'h 000000000000001C;
-      else if(axi_lite_req.ar.addr[3:0] <= 4'h 9)
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000020;
-      else
-        axi_lite_req_dec.ar.addr = 64'h 0000000000000024;
-     end
-   end // block: read_addr_decode
+  // DUT
+  axi_lite_mailbox_unit #(
+    .AXI_ADDR_WIDTH(32),
+    .axi_lite_req_t(axi_lite_req_t),
+    .axi_lite_resp_t(axi_lite_resp_t),
+    .NumMbox(NumMbox),
+    .AlignPage(0) // whether mailboxes addresses should be 4k aligned
+  ) i_dut (
+    .clk_i(clk),
+    .rst_ni(rst_n),
+    .axi_lite_req_i(axi_lite_req),
+    .axi_lite_rsp_o(axi_lite_resp),
+    .rcv_irq_o(rcv_irq),
+    .snd_irq_o(snd_irq)
+  );
 
-   always_comb begin :write_addr_decode //(maps 64bit rnd addr into the 10 regs addr)
-    if(~rst_ni)
-      axi_lite_req_dec.aw.addr = '0;
-    else begin
-      if(axi_lite_req.aw.addr[3:0] <= 4'h 1)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000000;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 2)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000008;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 3)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000004;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 4)
-        axi_lite_req_dec.aw.addr = 64'h 000000000000000C;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 5)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000010;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 6)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000014;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 7)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000018; 
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 8)
-        axi_lite_req_dec.aw.addr = 64'h 000000000000001C;
-      else if(axi_lite_req.aw.addr[3:0] <= 4'h 9)
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000020;
-      else
-        axi_lite_req_dec.aw.addr = 64'h 0000000000000024;
-     end
-   end
-   
-   initial begin  : axi_lite_master_process
-      
-     @(posedge rst_ni);
+  clk_rst_gen #(
+    .ClkPeriod    ( CyclTime ),
+    .RstClkCycles ( 5        )
+  ) i_clk_gen (
+    .clk_o (clk),
+    .rst_no(rst_n)
+  );
 
-     repeat ($urandom_range(10,15)) @(posedge clk_i);
-     axi_lite_rand_master.reset();  
-     repeat ($urandom_range(10,15)) @(posedge clk_i);
-  
-     $display("Run for Reads %0d, Writes %0d", NUM_BEATS, NUM_BEATS);
-      
-     fork
-       axi_lite_rand_master.send_aws(NUM_BEATS);
-       axi_lite_rand_master.send_ws (NUM_BEATS);
-       axi_lite_rand_master.recv_bs (NUM_BEATS);
-     join
+`define TEST_READ_REG(ADDR, EXPECTED) \
+    $display(`"%0t MST_0> Read register ``ADDR `", $time()); \
+    lite_axi_master.read(``ADDR, axi_pkg::prot_t'('0), data, resp); \
+    assert (data == data_t'(``EXPECTED)) else begin test_failed++; $error("Unexpected result"); end \
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
 
-     repeat ($urandom_range(10,15)) @(posedge clk_i);
-      
-     fork
-       axi_lite_rand_master.send_ars(NUM_BEATS);   
-       axi_lite_rand_master.recv_rs (NUM_BEATS);
-     join
-      
-     repeat ($urandom_range(10,15)) @(posedge clk_i);
-     $finish;
-      
-   end
-   
+`define TEST_WRITE_READ_REG(ADDR, EXPECTED) \
+    $display(`"%0t MST_0> write/read register ``ADDR `", $time()); \
+    lite_axi_master.write(``ADDR, axi_pkg::prot_t'('0), data_t'(``EXPECTED), 4'hf, resp);  \
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end \
+    lite_axi_master.read(``ADDR, axi_pkg::prot_t'('0), data, resp); \
+    assert (data == data_t'(``EXPECTED)) else begin test_failed++; $error("Unexpected result"); end \
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+
+`define TEST_W1S_REG(ADDR) \
+    $display(`"%0t MST_0> w1s register ``ADDR `", $time()); \
+    lite_axi_master.write(``ADDR, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);  \
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end \
+    lite_axi_master.read(``ADDR, axi_pkg::prot_t'('0), data, resp); \
+    assert (data == data_t'(32'h0)) else begin test_failed++; $error("Unexpected result"); end \
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+
+  initial begin : proc_master
+    automatic rand_lite_master_t lite_axi_master = new ( master_dv, "MST_0");
+    automatic data_t          data = '0;
+    automatic axi_pkg::resp_t resp = axi_pkg::RESP_SLVERR;
+    automatic addr_t          mbox_base = '0;
+    end_of_sim <= 1'b0;
+    lite_axi_master.reset();
+    @(posedge rst_n);
+
+    for (int k = 0; k < NumMbox; k++ ) begin
+      mbox_base = 256 * k; // each mailbox occupies 256 bytes
+      // Read all registers and compare their results
+      $info("Initial test by reading each register");
+      `TEST_READ_REG(mbox_base + IRQ_SND_STAT, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_SND_SET, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_SND_CLR, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_SND_EN, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_RCV_STAT, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_RCV_SET, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_RCV_CLR, 32'h0);
+      `TEST_READ_REG(mbox_base + IRQ_RCV_EN, 32'h0);
+      `TEST_READ_REG(mbox_base + LETTER0, 32'h0);
+      `TEST_READ_REG(mbox_base + LETTER1, 32'h0);
+
+      // write read scratchpad registers
+      $info("write/read tests");
+      `TEST_WRITE_READ_REG(mbox_base + LETTER0, 32'hcafedead);
+      `TEST_WRITE_READ_REG(mbox_base + LETTER0, 32'hffffffff);
+      `TEST_WRITE_READ_REG(mbox_base + LETTER1, 32'hcafedead);
+      `TEST_WRITE_READ_REG(mbox_base + LETTER1, 32'hffffffff);
+
+      `TEST_WRITE_READ_REG(mbox_base + LETTER0, 32'h00000000);
+      `TEST_WRITE_READ_REG(mbox_base + LETTER1, 32'h00000000);
+
+      // Test w1s
+      `TEST_W1S_REG(mbox_base + IRQ_SND_SET);
+      `TEST_W1S_REG(mbox_base + IRQ_SND_CLR);
+      `TEST_W1S_REG(mbox_base + IRQ_RCV_SET);
+      `TEST_W1S_REG(mbox_base + IRQ_RCV_CLR);
+
+      // test send and receive interrupt
+      // set irq, check stat, check irq line low, enable mask, check irq line high, 
+      // clear, check irq line low, check stat
+      lite_axi_master.write(mbox_base + IRQ_SND_SET, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      `TEST_READ_REG(mbox_base + IRQ_SND_STAT, 32'h1);
+      assert(snd_irq[k] == 1'b0) else begin test_failed++; $error("Unexpected result"); end
+      lite_axi_master.write(mbox_base + IRQ_SND_EN, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      assert (snd_irq[k] == 1'b1) else begin test_failed++; $error("Unexpected result"); end
+
+      lite_axi_master.write(mbox_base + IRQ_SND_CLR, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      assert (snd_irq[k] == 1'b0) else begin test_failed++; $error("Unexpected result"); end
+      `TEST_READ_REG(mbox_base + IRQ_SND_STAT, 32'h0);
+
+      // same for rcv
+      lite_axi_master.write(mbox_base + IRQ_RCV_SET, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      `TEST_READ_REG(mbox_base + IRQ_RCV_STAT, 32'h1);
+      assert(rcv_irq[k] == 1'b0) else begin test_failed++; $error("Unexpected result"); end
+      lite_axi_master.write(mbox_base + IRQ_RCV_EN, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      assert (rcv_irq[k] == 1'b1) else begin test_failed++; $error("Unexpected result"); end
+
+      lite_axi_master.write(mbox_base + IRQ_RCV_CLR, axi_pkg::prot_t'('0), data_t'(32'h1), 4'hf, resp);
+      assert (resp == axi_pkg::RESP_OKAY) else begin test_failed++; $error("Unexpected result"); end
+      assert (rcv_irq[k] == 1'b0) else begin test_failed++; $error("Unexpected result"); end
+      `TEST_READ_REG(mbox_base + IRQ_RCV_STAT, 32'h0);
+    end
+
+    end_of_sim <= 1'b1;
+  end
+
+  initial begin : proc_monitor_irq_0
+    forever begin
+      @(posedge snd_irq);
+      $info("Received SND interrupt");
+    end
+  end
+
+  initial begin : proc_monitor_irq_1
+    forever begin
+      @(posedge rcv_irq);
+      $info("Received RCV interrupt");
+    end
+  end
+
+  initial begin : proc_stop_sim
+    wait (end_of_sim);
+    repeat (50) @(posedge clk);
+    $display("Number of failed tests: %0d", test_failed);
+    if (test_failed > 0) begin
+        $fatal(1, "Assertion errors. Failure!");
+    end else begin
+        $info("Success.",);
+    end
+    $stop();
+  end
+
 endmodule
-  
