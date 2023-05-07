@@ -111,11 +111,11 @@ module mailbox_unit import mailbox_reg_pkg::*; #(
 
     always_ff @(posedge clk_i or negedge rst_ni) begin : irq_lines
       if (!rst_ni) begin
-        snd_irq_q <= '0;
-        rcv_irq_q <= '0;
+        snd_irq_q[i] <= '0;
+        rcv_irq_q[i] <= '0;
       end else begin
-        snd_irq_q <= snd_irq_d;
-        rcv_irq_q <= rcv_irq_d;
+        snd_irq_q[i] <= snd_irq_d[i];
+        rcv_irq_q[i] <= rcv_irq_d[i];
       end
     end
   end
