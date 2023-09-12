@@ -6,18 +6,18 @@ AXI-Lite wrapper is also available.
 
 ## Register map
 
-| Offset           | Register         | Width (bit)   | Note                 |
-| --------         | ----------       | ------        |	------               |
-| 0x00 + i * 0x80  | INT\_SND\_STAT   |  1            |	 current irq status  |
-| 0x04 + i * 0x80  | INT\_SND\_SET    |  1            |	 set irq             |
-| 0x08 + i * 0x80  | INT\_SND\_CLR    |  1            |	 clear irq           |
-| 0x0C + i * 0x80  | INT\_SND\_EN     |  1            |	 enable irq          |
-| 0x40 + i * 0x80  | INT\_RCV\_STAT   |  1            |	 current irq status  |
-| 0x44 + i * 0x80  | INT\_RCV\_SET    |  1            |	 set irq             |
-| 0x48 + i * 0x80  | INT\_RCV\_CLR    |  1            |	 clear irq           |
-| 0x4C + i * 0x80  | INT\_RCV\_EN     |  1            |	 enable irq          |
-| 0x80 + i * 0x80  | LETTER0          |  32           |	 message             |
-| 0x8C + i * 0x80  | LETTER1          |  32           |	 message             |
+| Offset            | Register         | Width (bit)   | Note                 |
+| --------          | ----------       | ------        |	------               |
+| 0x00 + i * 0x100  | INT\_SND\_STAT   |  1            |	 current irq status  |
+| 0x04 + i * 0x100  | INT\_SND\_SET    |  1            |	 set irq             |
+| 0x08 + i * 0x100  | INT\_SND\_CLR    |  1            |	 clear irq           |
+| 0x0C + i * 0x100  | INT\_SND\_EN     |  1            |	 enable irq          |
+| 0x40 + i * 0x100  | INT\_RCV\_STAT   |  1            |	 current irq status  |
+| 0x44 + i * 0x100  | INT\_RCV\_SET    |  1            |	 set irq             |
+| 0x48 + i * 0x100  | INT\_RCV\_CLR    |  1            |	 clear irq           |
+| 0x4C + i * 0x100  | INT\_RCV\_EN     |  1            |	 enable irq          |
+| 0x80 + i * 0x100  | LETTER0          |  32           |	 message             |
+| 0x8C + i * 0x100  | LETTER1          |  32           |	 message             |
 
 for each mailbox with id `i`.
 
